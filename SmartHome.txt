@@ -1,3 +1,74 @@
+#Inicia el Registro de usuarios e inicio de sesion
+'''
+Inicio de sesion
+'''
+usuarios = []
+
+def menu_principal():
+    '''
+    Funcion par el menu principal
+    '''
+    print("Bienvenido a la aplicación.")
+    if usuarios:
+        print("Usuarios registrados:")
+        for usuario in usuarios:
+            print(usuario['nombre'])
+        print("1. Iniciar sesión")
+        print("2. Registrar nuevo usuario")
+        opcion = input("Seleccione una opción: ")
+        if opcion == '1':
+            '''
+            si ya no vamos a regsitrar mas usuarios se inicia sesion
+            '''
+            iniciar_sesion()
+        elif opcion == '2':
+            '''
+            aqui corre la funcion para registrar un usuario
+            '''
+            registrar_usuario()
+        else:
+            '''
+            si la opcion es incorrecta vuelve a iniciar la funcion de menu principal
+            '''
+            print("Opción no válida. Inténtelo de nuevo.")
+            menu_principal()
+    else:
+        print("No hay usuarios registrados.")
+        '''
+        si no se cumplen las condiciones vuelve a iniciar la funcion
+        '''
+        registrar_usuario()
+
+def registrar_usuario():
+    '''
+    funcion para regsitrar usuarios
+    '''
+    nombre = input("Ingrese su nombre: ")
+    correo = input("Ingrese su correo electrónico: ")
+    pin = input("Ingrese su PIN: ")
+    usuario = {'nombre': nombre, 'correo': correo, 'pin': pin}
+    usuarios.append(usuario)
+    print("Usuario registrado exitosamente.")
+    '''
+    Al registrar exitosamente a un usuario se regresa al menu principal 
+    '''
+    menu_principal()
+
+def iniciar_sesion():
+    '''
+    Funcion para ingresar a la aplicacion
+    '''
+    nombre_usuario = input("Ingrese su nombre de usuario: ")
+    pin = input("Ingrese su PIN: ")
+    for usuario in usuarios:
+        if usuario['nombre'] == nombre_usuario and usuario['pin'] == pin:
+            print("Inicio de sesión exitoso.")
+            return
+    print("Nombre de usuario o PIN incorrecto. Inténtelo de nuevo.")
+    iniciar_sesion()
+
+menu_principal()        
+#Aca termina el incion de sesion y registro de usuarios
 # El registro de usuarios corresponde a un diccionario que contiene el nombre de los usuarios registrados y los valores asociados a cada usuario, un segundo diccionario con el correo electrónico y el pin de acceso.
 
 ## Definir los componentes del los diccionarios (inicialmente vacíos)
