@@ -6,7 +6,7 @@ usuarios = []
 
 def menu_principal():
     '''
-    Funcion par el menu principal
+    Funcion para el menu principal
     '''
     print("Bienvenido a la aplicación.")
     if usuarios:
@@ -159,5 +159,75 @@ while True:
         break
     else:
         print("Su selección no es compatible. Intente de nuevo")
-      
+
+#Funciones Generales 
+def crear_cerradura(nombre, estado="cerrado", pin="1234"):
+    return {"nombre": nombre, "estado": estado, "pin": pin}
+
+def cambiar_pin(cerradura, pin_actual, nuevo_pin):
+    if len(nuevo_pin) > 4:
+        print("¡Error! El pin no puede tener más de 4 dígitos.")
+    elif pin_actual == cerradura["pin"]:
+        cerradura["pin"] = nuevo_pin
+        print("¡El pin ha sido cambiado con éxito!")
+    else:
+        print("¡Pin incorrecto! No se puede cambiar el pin.")
+
+def abrir_cerradura(cerradura, pin):
+    if pin == cerradura["pin"]:
+        cerradura["estado"] = "abierto"
+        print(f"La cerradura {cerradura['nombre']} ha sido abierta.")
+    else:
+        print("¡Pin incorrecto! No se puede abrir la cerradura.")
+
+def cerrar_cerradura(cerradura):
+    cerradura["estado"] = "cerrado"
+    print(f"La cerradura {cerradura['nombre']} ha sido cerrada.")
+
+def menu_cerraduras(cerraduras):
+    while True:
+        print("\n--- Menú de Cerraduras ---")
+        for i, cerradura in enumerate(cerraduras, start=1):
+            print(f"{i}. {cerradura['nombre']}: {cerradura['estado']}")
+
+        print("0. Salir")
+
+        opcion = input("Seleccione una cerradura para cambiar su estado: ")
+
+        if opcion == '0':
+            break
+        elif opcion.isdigit() and 0 < int(opcion) <= len(cerraduras):
+            cerradura_seleccionada = cerraduras[int(opcion) - 1]
+
+            print(f"\nOperando la cerradura {cerradura_seleccionada['nombre']}:")
+            print("1. Abrir cerradura")
+            print("2. Cerrar cerradura")
+            print("3. Cambiar pin")
+
+            accion = input("Seleccione una acción: ")
+
+            if accion == '1':
+                pin = input("Ingrese el pin: ")
+                abrir_cerradura(cerradura_seleccionada, pin)
+            elif accion == '2':
+                cerrar_cerradura(cerradura_seleccionada)
+            elif accion == '3':
+                pin_actual = input("Ingrese el pin actual: ")
+                nuevo_pin = input("Ingrese el nuevo pin: ")
+                cambiar_pin(cerradura_seleccionada, pin_actual, nuevo_pin)
+            else:
+                print("¡Opción inválida! Inténtelo de nuevo.")
+        else:
+            print("¡Opción inválida! Inténtelo de nuevo.")
+
+# Creamos las cerraduras
+cerraduras = [
+    crear_cerradura("Salida Principal"),
+    crear_cerradura("Salida Trasera"),
+    crear_cerradura("Balcon")
+]
+
+# Ejecutamos el menú de cerraduras
+menu_cerraduras(cerraduras)
+
 
