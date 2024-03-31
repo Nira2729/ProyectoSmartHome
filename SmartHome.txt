@@ -160,6 +160,51 @@ while True:
     else:
         print("Su selección no es compatible. Intente de nuevo")
 
+#Registrar un nuevo dispositivo
+def crear_dispositivo(nombre, estado="apagado"):
+    dispositivo = {"nombre": nombre, "estado": estado, "hora_encendido": None, "hora_apagado": None}
+    programar_automaticamente(dispositivo)
+    return dispositivo
+
+def cambiar_estado(dispositivo, nuevo_estado):
+    dispositivo["estado"] = nuevo_estado
+    print(f"El dispositivo '{dispositivo['nombre']}' ahora está {nuevo_estado}.")
+
+def programar_automaticamente(dispositivo):
+    hora_encendido = input("Ingrese la hora de encendido (HH:MM AM/PM): ")
+    hora_apagado = input("Ingrese la hora de apagado (HH:MM AM/PM): ")
+
+    dispositivo["hora_encendido"] = hora_encendido
+    dispositivo["hora_apagado"] = hora_apagado
+
+    print(f"Programación automática establecida para el dispositivo '{dispositivo['nombre']}':")
+    print(f"Encendido a las {hora_encendido} y apagado a las {hora_apagado}.")
+
+# Creamos una lista para almacenar los dispositivos
+dispositivos = []
+
+while True:
+    print("\n--- Menú Principal ---")
+    print("1. Registrar nuevo dispositivo")
+    print("2. Ver dispositivos registrados")
+    print("0. Salir")
+
+    opcion = input("Seleccione una opción: ")
+
+    if opcion == '1':
+        nombre_dispositivo = input("Ingrese el nombre del dispositivo: ")
+        dispositivo_nuevo = crear_dispositivo(nombre_dispositivo)
+        dispositivos.append(dispositivo_nuevo)
+        print(f"Dispositivo '{nombre_dispositivo}' registrado con éxito.")
+    elif opcion == '2':
+        for dispositivo in dispositivos:
+            print(f"Nombre: {dispositivo['nombre']}, Estado: {dispositivo['estado']}")
+    elif opcion == '0':
+        print("¡Hasta luego!")
+        break
+    else:
+        print("¡Opción inválida! Inténtelo de nuevo.")
+
 #Funciones Generales 
 def crear_cerradura(nombre, estado="cerrado", pin="1234"):
     return {"nombre": nombre, "estado": estado, "pin": pin}
