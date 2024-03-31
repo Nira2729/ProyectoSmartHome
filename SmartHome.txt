@@ -2,46 +2,194 @@
 '''
 Inicio de sesion
 '''
+## Definir los componentes del los diccionarios (inicialmente vacíos)
 usuarios = []
-
+usuariosRegistrados = {}
+habitacionesUsuarios = {}
 def menu_principal():
     '''
     Funcion para el menu principal
     '''
-    print("Bienvenido a la aplicación.")
-    if usuarios:
-        print("Usuarios registrados:")
-        for usuario in usuarios:
-            print(usuario['nombre'])
-        print("1. Iniciar sesión")
-        print("2. Registrar nuevo usuario")
-        opcion = input("Seleccione una opción: ")
-        if opcion == '1':
-            '''
-            si ya no vamos a regsitrar mas usuarios se inicia sesion
-            '''
-            iniciar_sesion()
-        elif opcion == '2':
-            '''
-            aqui corre la funcion para registrar un usuario
-            '''
-            registrar_usuario()
+    while True: 
+        print("\n ****** Bienvenido a SmartHome ******\n")
+        print("¿Qué deseas hacer?")
+        print("1. Ingresar con tu usuario")
+        print("2. Agregar usuario")
+        print("3. Salir")
+        opcion = input("Por favor seleccione una opción: ")
+        
+        if opcion == "1":
+            usuarioActual = usuarioExistente()
+            if usuarioActual:
+                while True:
+                    print("\n¿Qué deseas hacer,", usuarioActual + "?")
+                    print("1. Agregar una habitación")
+                    print("2. Mostrar todas las habitaciones")
+                    print("3. Agregar dispositivo a una habitación")
+                    print("4. Cerrar sesión")
+                    otraOpcion = input("Por favor seleccione una opción: ")
+                    if otraOpcion == "1":
+                        agregarHabitacion(usuarioActual)
+                    elif otraOpcion == "2":
+                        mostrarHabitaciones(usuarioActual)
+                    elif opcion == "3":
+                        agregarDispositivo(usuarioActual)
+                    elif otraOpcion == "4":
+                        print("Sesión finalizada. ¡Hasta luego!")
+                        break
+                    else:
+                        print("Su selección no es compatible. Intente de nuevo")
+        elif opcion == "2":
+            nuevoUsuario()
+        elif opcion == "3":
+            print("\nSesión finalizada. ¡Hasta luego!")
+            break
         else:
-            '''
-            si la opcion es incorrecta vuelve a iniciar la funcion de menu principal
-            '''
-            print("Opción no válida. Inténtelo de nuevo.")
-            menu_principal()
+            print("Su selección no es compatible. Intente de nuevo")
+# Primera opción del software:
+## Extraer la información de un usuario existente
+def usuarioExistente():
+    global usuariosRegistrados
+    usuarioNombre = input("\nIntroduzca su nombre de usuario: ")
+    if usuarioNombre in usuariosRegistrados.keys():       
+        # Verificación del usuario
+        pin = input("Introduzca su pin: ")
+        if usuariosRegistrados[usuarioNombre]['pin'] == int(pin):
+            print("\n ¡Hola " + usuarioNombre + "!\n")
+            print("Tu correo electrónico registrado es: ")
+            print(usuariosRegistrados[usuarioNombre]['correo'])
+            return usuarioNombre  # Devuelve el nombre del usuario actual
+        else:
+            print("El pin proporcionado no corresponde con el usuario")
+    # Si el usuario no existe en el diccionario:
     else:
-        print("No hay usuarios registrados.")
-        '''
-        si no se cumplen las condiciones vuelve a iniciar la funcion
-        '''
-        registrar_usuario()
+        print("\n MENSAJE: El usuario no existe. Intente de nuevo o agregue nuevo usuario\n")
+    return None
+# Segunda opción del software;
+## Crear un nuevo usuario
+def nuevoUsuario():
+    global usuariosRegistrados
+    nuevoUsuario = input("\nIngrese el nombre de usuario: ")
+    correo = input("Ingrese el correo electrónico: ")
+    pin = input("Ingrese el pin: ")
+    usuariosRegistrados[nuevoUsuario] = {'correo': correo, 'pin': int(pin)}
+    habitacionesUsuarios[nuevoUsuario] = {}  # Inicializa las habitaciones del nuevo usuario como una lista vacía
+    print("Registro exitoso. Ahora puede iniciar sesión.")
+    
+# Opción para agregar una habitación
+def agregarHabitacion(usuarioActual):
+    global habitacionesUsuarios
+    nombreHabitacion = input("\nIngrese el nombre de la habitación que desea agregar: ")
+    if nombreHabitacion not in habitacionesUsuarios[usuarioActual]:
+        habitacionesUsuarios[usuarioActual] = {'Habitacion' : nombreHabitacion}
+        print("Habitación agregada correctamente.")
+    else:
+        print("La habitación ya existe.")
+# Opción para mostrar todas las habitaciones del usuario
+def mostrarHabitaciones(usuarioActual):
+    global habitacionesUsuarios
+    print("\nHabitaciones de", usuarioActual)
+    if habitacionesUsuarios[usuarioActual]:
+        for habitacion in habitacionesUsuarios[usuarioActual]:
+            print("-", habitacionesUsuarios[usuarioActual][habitacion])
+    else:
+        print("No se han agregado habitaciones.")
 
+# ... (código anterior)
+
+# Opción para agregar un dispositivo a una habitación
+def agregarDispositivo(usuarioActual):
+    global habitacionesUsuarios
+
+    nombreHabitacion = input("\nIngrese el nombre de la habitación que desea agregar Dispositivo: ")
+
+    if habitacionesUsuarios[usuarioActual].get('Habitacion') != nombreHabitacion:
+        print("Habitación No Existe.")  
+    else:
+        nombreDispositivo = input("\nIngrese el nombre del Dispositivo: ")
+
+        pa = input("\nDesea configurar horario a este Dispositivo: (S/N) ")
+
+        if (pa == 'S'):
+           hi = input("\nHora inicial encendido: ")
+           hf = input("\nHora Final encendido: ")
+           
+           habitacionesUsuarios[usuarioActual] = {'Habitacion' : nombreHabitacion, 'Dispositivo'  : nombreDispositivo, 'Hora Inicial' : hi, 'Hora Final' : hf}
+           print("Dispositivo agregado correctamente, con programación de horario.")
+        else:
+           habitacionesUsuarios[usuarioActual] = {'Habitacion' : nombreHabitacion, 'Dispositivo'  : nombreDispositivo}
+           print(f"Dispositivo {nombreDispositivo} sin Programación en la habitación {nombreHabitacion}.")
+
+
+
+# Opción para ver los dispositivos de una habitación
+def verDispositivo(usuarioActual):
+    global habitacionesUsuarios
+
+    nombreHabitacion = input("\nIngrese el nombre de la habitación para ver los dispositivos: ")
+
+    if habitacionesUsuarios[usuarioActual].get('Habitacion') != nombreHabitacion:
+        print("Habitación No Existe.")  
+    else:
+        print (f'------   Dispositivos de la Habitación {nombreHabitacion}    ------')
+        if habitacionesUsuarios[usuarioActual].get('Hora Inicial') == None:
+            print(f'\n',habitacionesUsuarios[usuarioActual].get('Dispositivo'), ' Sin programación de encendido y apagado')
+        else:
+            print(f'\n',habitacionesUsuarios[usuarioActual].get('Dispositivo'), ' Enciende a la ', habitacionesUsuarios[usuarioActual].get('Hora Inicial'), ' y se apaga a la ', habitacionesUsuarios[usuarioActual].get('Hora Final'))
+
+
+        print(f"\nLista de Dispositivos en la habitación {nombreHabitacion}.")
+  
+# Menú de opciones para el usuario
+def menu_usuario(usuarioActual):
+    while True:
+        print("\n--- Menú de Usuario ---")
+        print("1. Agregar una habitación")
+        print("2. Mostrar todas las habitaciones")
+        print("3. Agregar dispositivo a una habitación")
+        print("4. Dispositivo de una habitación")
+        print("5. Cerrar sesión")
+        opcion = input("Por favor seleccione una opción: ")
+
+        if opcion == "1":
+            agregarHabitacion(usuarioActual)
+        elif opcion == "2":
+            mostrarHabitaciones(usuarioActual)
+        elif opcion == "3":
+            agregarDispositivo(usuarioActual)
+        elif opcion == "4":
+            verDispositivo(usuarioActual)
+        elif opcion == "5":
+            print("Sesión finalizada. ¡Hasta luego!")
+            break
+        else:
+            print("Su selección no es compatible. Inténtelo de nuevo.")
+
+# Ejecutar el programa
+while True:
+    print("\nBienvenido a SmartHome.\n")
+    print("¿Qué deseas hacer?")
+    print("1. Ingresar con tu usuario")
+    print("2. Agregar usuario")
+    print("3. Salir")
+    opcion = input("Por favor seleccione una opción: ")
+
+    if opcion == "1":
+        usuarioActual = usuarioExistente()
+        if usuarioActual:
+            menu_usuario(usuarioActual)
+    elif opcion == "2":
+        nuevoUsuario()
+    elif opcion == "3":
+        print("\nSesión finalizada. ¡Hasta luego!")
+        break
+    else:
+        print("Su selección no es compatible. Inténtelo de nuevo.")
+
+        
 def registrar_usuario():
     '''
-    funcion para regsitrar usuarios
+    función para registrar usuarios
     '''
     nombre = input("Ingrese su nombre: ")
     correo = input("Ingrese su correo electrónico: ")
@@ -50,7 +198,7 @@ def registrar_usuario():
     usuarios.append(usuario)
     print("Usuario registrado exitosamente.")
     '''
-    Al registrar exitosamente a un usuario se regresa al menu principal 
+    Al registrar exitosamente a un usuario se regresa al menú principal 
     '''
     menu_principal()
 
@@ -67,143 +215,7 @@ def iniciar_sesion():
     print("Nombre de usuario o PIN incorrecto. Inténtelo de nuevo.")
     iniciar_sesion()
 
-menu_principal()        
-#Aca termina el incion de sesion y registro de usuarios
-# El registro de usuarios corresponde a un diccionario que contiene el nombre de los usuarios registrados y los valores asociados a cada usuario, un segundo diccionario con el correo electrónico y el pin de acceso.
-
-## Definir los componentes del los diccionarios (inicialmente vacíos)
-usuariosRegistrados = {}
-habitacionesUsuarios = {}
-
-# Primera opción del software:
-## Extraer la información de un usuario existente
-def usuarioExistente():
-    global usuariosRegistrados
-    usuarioNombre = input("\n Introduzca su nombre de usuario: ")
-    if usuarioNombre in usuariosRegistrados.keys():       
-        # Verificación del usuario
-        pin = input("Introduzca su pin: ")
-        if usuariosRegistrados[usuarioNombre]['pin'] == int(pin):
-            print("\n ¡Hola " + usuarioNombre + "!\n")
-            print("Tu correo electrónico registrado es: ")
-            print(usuariosRegistrados[usuarioNombre]['correo'])
-            return usuarioNombre  # Devuelve el nombre del usuario actual
-        else:
-            print("El pin proporcionado no corresponde con el usuario")
-    # Si el usuario no existe en el diccionario:
-    else:
-        print("\n MENSAJE: El usuario no existe. Intente de nuevo o ingrese nuevo usuario\n")
-    return None
-
-# Segunda opción del software;
-## Crear un nuevo usuario
-def nuevoUsuario():
-    global usuariosRegistrados
-    nuevoUsuario = input("\n Ingrese el nombre de usuario: ")
-    correo = input("Ingrese el correo electrónico: ")
-    pin = input("Ingrese el pin: ")
-    usuariosRegistrados[nuevoUsuario] = {'correo': correo, 'pin': int(pin)}
-    habitacionesUsuarios[nuevoUsuario] = []  # Inicializa las habitaciones del nuevo usuario como una lista vacía
-    print("Registro exitoso. Ahora puede iniciar sesión.")
-
-# Opción para agregar una habitación
-def agregarHabitacion(usuarioActual):
-    global habitacionesUsuarios
-    nombreHabitacion = input("\nIngrese el nombre de la habitación que desea agregar: ")
-    if nombreHabitacion not in habitacionesUsuarios[usuarioActual]:
-        habitacionesUsuarios[usuarioActual].append(nombreHabitacion)
-        print("Habitación agregada correctamente.")
-    else:
-        print("La habitación ya existe.")
-
-# Opción para mostrar todas las habitaciones del usuario
-def mostrarHabitaciones(usuarioActual):
-    global habitacionesUsuarios
-    print("\nHabitaciones de", usuarioActual)
-    if habitacionesUsuarios[usuarioActual]:
-        for habitacion in habitacionesUsuarios[usuarioActual]:
-            print("-", habitacion)
-    else:
-        print("No se han agregado habitaciones.")
-
-while True: 
-    print("\n Bienvenido a SmartHome.\n")
-    print("¿Qué deseas hacer?")
-    print("1. Ingresar con tu usuario")
-    print("2. Agregar usuario")
-    print("3. Salir")
-    opcion = input("Por favor seleccione una opción: ")
-    
-    if opcion == "1":
-        usuarioActual = usuarioExistente()
-        if usuarioActual:
-            while True:
-                print("\n¿Qué deseas hacer,", usuarioActual + "?")
-                print("1. Agregar una habitación")
-                print("2. Mostrar todas las habitaciones")
-                print("3. Cerrar sesión")
-                otraOpcion = input("Por favor seleccione una opción: ")
-                if otraOpcion == "1":
-                    agregarHabitacion(usuarioActual)
-                elif otraOpcion == "2":
-                    mostrarHabitaciones(usuarioActual)
-                elif otraOpcion == "3":
-                    print("Sesión finalizada. ¡Hasta luego!")
-                    break
-                else:
-                    print("Su selección no es compatible. Intente de nuevo")
-    elif opcion == "2":
-        nuevoUsuario()
-    elif opcion == "3":
-        print("\n Sesión finalizada. ¡Hasta luego!")
-        break
-    else:
-        print("Su selección no es compatible. Intente de nuevo")
-
-#Registrar un nuevo dispositivo
-def crear_dispositivo(nombre, estado="apagado"):
-    dispositivo = {"nombre": nombre, "estado": estado, "hora_encendido": None, "hora_apagado": None}
-    programar_automaticamente(dispositivo)
-    return dispositivo
-
-def cambiar_estado(dispositivo, nuevo_estado):
-    dispositivo["estado"] = nuevo_estado
-    print(f"El dispositivo '{dispositivo['nombre']}' ahora está {nuevo_estado}.")
-
-def programar_automaticamente(dispositivo):
-    hora_encendido = input("Ingrese la hora de encendido (HH:MM AM/PM): ")
-    hora_apagado = input("Ingrese la hora de apagado (HH:MM AM/PM): ")
-
-    dispositivo["hora_encendido"] = hora_encendido
-    dispositivo["hora_apagado"] = hora_apagado
-
-    print(f"Programación automática establecida para el dispositivo '{dispositivo['nombre']}':")
-    print(f"Encendido a las {hora_encendido} y apagado a las {hora_apagado}.")
-
-# Creamos una lista para almacenar los dispositivos
-dispositivos = []
-
-while True:
-    print("\n--- Menú Principal ---")
-    print("1. Registrar nuevo dispositivo")
-    print("2. Ver dispositivos registrados")
-    print("0. Salir")
-
-    opcion = input("Seleccione una opción: ")
-
-    if opcion == '1':
-        nombre_dispositivo = input("Ingrese el nombre del dispositivo: ")
-        dispositivo_nuevo = crear_dispositivo(nombre_dispositivo)
-        dispositivos.append(dispositivo_nuevo)
-        print(f"Dispositivo '{nombre_dispositivo}' registrado con éxito.")
-    elif opcion == '2':
-        for dispositivo in dispositivos:
-            print(f"Nombre: {dispositivo['nombre']}, Estado: {dispositivo['estado']}")
-    elif opcion == '0':
-        print("¡Hasta luego!")
-        break
-    else:
-        print("¡Opción inválida! Inténtelo de nuevo.")
+menu_principal()  
 
 #Funciones Generales 
 def crear_cerradura(nombre, estado="cerrado", pin="1234"):
