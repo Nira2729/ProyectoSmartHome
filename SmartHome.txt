@@ -182,7 +182,18 @@ def menu_cerraduras(cerraduras, usuarioActual):
         else:
             print("¡Opción inválida! Inténtelo de nuevo.")
 
-
+def cambiarPinUsuario(usuariosRegistrados, usuarioActual):
+    pin_actual = input("Ingrese su pin actual: ")
+    if usuariosRegistrados[usuarioActual]['pin'] == int(pin_actual):
+        nuevo_pin = input("Ingrese su nuevo pin: ")
+        confirmar_pin = input("Confirme su nuevo pin: ")
+        if nuevo_pin == confirmar_pin:
+            usuariosRegistrados[usuarioActual]['pin'] = int(nuevo_pin)
+            print("Pin cambiado con éxito.")
+        else:
+            print("Los pines no coinciden. Intente de nuevo.")
+    else:
+        print("Pin actual incorrecto. Intente de nuevo.")
     
 
 # Principal
@@ -214,14 +225,15 @@ def main():
 
 def menu_usuario(usuarioActual):
     opcionUsuario = "1"
-    while opcionUsuario != "6":
+    while opcionUsuario != "7":
         print("\nMENU DEL USUARIO")
         print("1. Agregar habitación.")
         print("2. Ver habitaciones registradas.")
         print("3. Agregar dispositivo.")
         print("4. Ver dispositivos de una habitación.")
         print("5. Añadir/Manejar cerraduras")
-        print("6. Salir")
+        print("6. Cambiar pin de inicio de sesión")
+        print("7. Salir")
         opcionUsuario = input("Por favor seleccione una opción: ")
 
         if opcionUsuario == "1":
@@ -244,6 +256,8 @@ def menu_usuario(usuarioActual):
                         else:
                             print("\nOpción inválida...")
         elif opcionUsuario == "6":
+                    cambiarPinUsuario(usuariosRegistrados, usuarioActual)
+        elif opcionUsuario == "7":
             print("\nVolviendo a menú principal...")
 
 
