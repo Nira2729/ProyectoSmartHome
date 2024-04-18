@@ -79,13 +79,27 @@ def agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual
                 break
         
         if not dispositivoExistente:
-            estado = input("¿El dispositivo está encendido? (si/no): ").lower()
+            resEstado = input("¿El dispositivo está encendido? (si/no): ").lower()
+            while resEstado != "si" and resEstado != "no":
+                print("Respuesta inválida. Vuelva a intentarlo.")
+                resEstado = input("¿El dispositivo está encendido? (si/no): ").lower()
+            if resEstado == "si":
+                estado = "encendido"
+            elif resEstado == "no":
+                estado = "apagado"
             dispositivo = {'nombre': nombreDispositivo, 'estado': estado}
 
-            configurar_horario = input("¿Desea configurar un horario de encendido y apagado? (si/no): ").lower()
+            configurar_horario = input("¿Desea configurar un horario de encendido y apagado manualmente? (si/no): ").lower()
+            while configurar_horario != "si" and configurar_horario != "no":
+                print("Respuesta inválida. Vuelva a intentarlo.")
+                configurar_horario = input("¿Desea configurar un horario de encendido y apagado manualmente? (si/no): ").lower()
             if configurar_horario == "si":
                 hora_encendido = input("Ingrese la hora de encendido (formato 24h, ej: 00:00): ")
                 hora_apagado = input("Ingrese la hora de apagado (formato 24h, ej: 22:00): ")
+                while hora_apagado == hora_encendido:
+                    print("Las horas de encendido y apagado no pueden ser iguales. Vuelva a intentarlo.")
+                    hora_encendido = input("Ingrese la hora de encendido (formato 24h, ej: 00:00): ")
+                    hora_apagado = input("Ingrese la hora de apagado (formato 24h, ej: 22:00): ")
                 dispositivo['horario'] = {'encendido': hora_encendido, 'apagado': hora_apagado}
             else:
                 # Establece el horario predeterminado de 12:00 am a 10:00 pm
@@ -107,56 +121,43 @@ def mostrarDispositivosHabitacion(dispositivosUsuarios, habitacionesUsuarios, us
     if not habitacionesUsuarios.get(usuarioActual):
         print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")
         return
-    
+
     nombreHabitacion = input("\nIngrese el nombre de la habitación de los dispositivos que desea ver: ")
-    
+
     if nombreHabitacion in habitacionesUsuarios[usuarioActual]:
-        if nombreHabitacion in dispositivosUsuarios.get(usuarioActual, {}):
-            dispositivos = dispositivosUsuarios[usuarioActual][nombreHabitacion]
-            if dispositivos:
-                print("\nDispositivos en", nombreHabitacion, ":")
-                for dispositivo in dispositivos:
-                    estado = "Encendido" if dispositivo['estado'] == "si" or dispositivo['estado'] == "encendido" else "Apagado"
-                    print(f"- {dispositivo['nombre']}: {estado}", end='')
-                    if estado == "Encendido":
-                        print(f", Encendido desde: {dispositivo['fechaEncendido']}")
-                    else:
-                        print()
-            else:
-                print("No hay dispositivos en la habitación", nombreHabitacion)
+        dispositivos = dispositivosUsuarios.get(usuarioActual, {}).get(nombreHabitacion, [])
+        if dispositivos:
+            print("\nDispositivos en", nombreHabitacion, ":")
+            for dispositivo in dispositivos:
+                estado = "Encendido" if dispositivo['estado'] == "encendido" else "Apagado"
+                print(f"- {dispositivo['nombre']}: {estado}, encendido a las {dispositivo['horario']['encendido']} y apagado a las {dispositivo['horario']['apagado']}")
         else:
             print("No hay dispositivos en la habitación", nombreHabitacion)
     else:
         print("La habitación especificada no existe.")
 
-
 def modificarEstadoDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual):
     if not habitacionesUsuarios.get(usuarioActual):
         print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")
         return
-    
+
     nombreHabitacion = input("\nIngrese el nombre de la habitación donde modificará el dispositivo: ")
-    
+
     if nombreHabitacion in habitacionesUsuarios[usuarioActual]:
-        if nombreHabitacion in dispositivosUsuarios.get(usuarioActual, {}):
-            dispositivos = dispositivosUsuarios[usuarioActual][nombreHabitacion]
-            if dispositivos:
-                nombreDispositivo = input("\nIngrese el nombre del dispositivo que desea modificar: ")
-                for dispositivo in dispositivos:
-                    if dispositivo['nombre'] == nombreDispositivo:
-                        nuevo_estado = input("Ingrese el nuevo estado del dispositivo (encendido/apagado): ").lower()
-                        if nuevo_estado in ["encendido", "apagado"]:
-                            dispositivo['estado'] = nuevo_estado
-                            if nuevo_estado == "encendido":
-                                dispositivo['fechaEncendido'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            print("Estado del dispositivo modificado correctamente.")
-                            return
-                        else:
-                            print("Estado no válido. Por favor, ingrese 'encendido' o 'apagado'.")
-                            return
-                print("No se encontró un dispositivo con ese nombre.")
-            else:
-                print("No hay dispositivos en la habitación", nombreHabitacion)
+        dispositivos = dispositivosUsuarios.get(usuarioActual, {}).get(nombreHabitacion, [])
+        if dispositivos:
+            nombreDispositivo = input("\nIngrese el nombre del dispositivo que desea modificar: ")
+            for dispositivo in dispositivos:
+                if dispositivo['nombre'] == nombreDispositivo:
+                    nuevo_estado = input("Ingrese el nuevo estado del dispositivo (encendido/apagado): ").lower()
+                    if nuevo_estado in ["encendido", "apagado"]:
+                        dispositivo['estado'] = nuevo_estado
+                        print("Estado del dispositivo modificado correctamente.")
+                        return
+                    else:
+                        print("Estado no válido. Por favor, ingrese 'encendido' o 'apagado'.")
+                        return
+            print("No se encontró un dispositivo con ese nombre.")
         else:
             print("No hay dispositivos en la habitación", nombreHabitacion)
     else:
