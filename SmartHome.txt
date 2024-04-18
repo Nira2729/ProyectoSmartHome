@@ -71,20 +71,37 @@ def agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual
         if nombreHabitacion not in dispositivosUsuarios[usuarioActual]:
             dispositivosUsuarios[usuarioActual][nombreHabitacion] = []
 
+        dispositivoExistente = False
         for dispositivo in dispositivosUsuarios[usuarioActual][nombreHabitacion]:
             if dispositivo['nombre'] == nombreDispositivo:
                 print("Un dispositivo con ese nombre ya existe en la habitación. Por favor, ingrese otro nombre.")
-                return
+                dispositivoExistente = True
+                break
+        
+        if not dispositivoExistente:
+            estado = input("¿El dispositivo está encendido? (si/no): ").lower()
+            dispositivo = {'nombre': nombreDispositivo, 'estado': estado}
 
-        estado = input("¿El dispositivo está encendido? (si/no): ").lower()
-        dispositivo = {'nombre': nombreDispositivo, 'estado': estado}
-        if estado == "si":
-            dispositivo['fechaEncendido'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            configurar_horario = input("¿Desea configurar un horario de encendido y apagado? (si/no): ").lower()
+            if configurar_horario == "si":
+                hora_encendido = input("Ingrese la hora de encendido (formato 24h, ej: 00:00): ")
+                hora_apagado = input("Ingrese la hora de apagado (formato 24h, ej: 22:00): ")
+                dispositivo['horario'] = {'encendido': hora_encendido, 'apagado': hora_apagado}
+            else:
+                # Establece el horario predeterminado de 12:00 am a 10:00 pm
+                dispositivo['horario'] = {'encendido': '00:00', 'apagado': '22:00'}
 
-        dispositivosUsuarios[usuarioActual][nombreHabitacion].append(dispositivo)
-        print("Dispositivo agregado correctamente.")
+            dispositivosUsuarios[usuarioActual][nombreHabitacion].append(dispositivo)
+            if configurar_horario == "si":
+                print(f"Dispositivo agregado correctamente con el horario personalizado de encendido a las {hora_encendido} y apagado a las {hora_apagado}.")
+            else:
+                print("Dispositivo agregado correctamente con el horario predeterminado de encendido a las 12:00 am y apagado a las 10:00 pm.")
     else:
         print("La habitación especificada no existe.")
+
+
+
+
 
 def mostrarDispositivosHabitacion(dispositivosUsuarios, habitacionesUsuarios, usuarioActual):
     if not habitacionesUsuarios.get(usuarioActual):
