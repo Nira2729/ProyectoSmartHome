@@ -39,7 +39,7 @@ def leer_datos():
                     cerradurasUsuarios[clave].append({'nombre': nombre, 'estado': estado, 'pin': pin})
     except FileNotFoundError:
         pass  #Si no existe el archivo, inicializamos con diccionarios vacíos
-    
+    file.close()
     return usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios
 
 
@@ -64,7 +64,7 @@ def guardar_datos(usuariosRegistrados, habitacionesUsuarios, dispositivosUsuario
             for cerradura in cerraduras:
                 valor = f"{cerradura['nombre']},{cerradura['estado']},{cerradura['pin']}"
                 file.write(f"CER:{usuario}:{valor}\n")
-
+        file.close()
 
 # Funciones a utilizar durante el programa
 
