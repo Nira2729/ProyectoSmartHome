@@ -1,17 +1,82 @@
-import datetime
+import os
 
-usuariosRegistrados = {}
-habitacionesUsuarios = {}
-dispositivosUsuarios = {}
-cerradurasUsuarios = {}
+#Funciones de archivo de texto
+
+def leer_datos():
+    #Lee los datos de los usuarios, habitaciones, dispositivos y cerraduras desde un archivo de texto
+    
+    usuariosRegistrados = {}
+    habitacionesUsuarios = {}
+    dispositivosUsuarios = {}
+    cerradurasUsuarios = {}
+    try:
+        with open("datos.txt", "r") as file:
+            for line in file:
+                tipo, clave, valor = line.strip().split(':', 2)
+                if tipo == "USR":
+                    correo, pin = valor.split(',', 1)
+                    usuariosRegistrados[clave] = {'correo': correo, 'pin': int(pin)}
+                elif tipo == "HAB":
+                    if clave not in habitacionesUsuarios:
+                        habitacionesUsuarios[clave] = []
+                    habitacionesUsuarios[clave].append(valor)
+                elif tipo == "DIS":
+                    usuario, habitacion = clave.split(',')
+                    nombre, estado, hora_encendido, hora_apagado = valor.split(',', 3)
+                    if usuario not in dispositivosUsuarios:
+                        dispositivosUsuarios[usuario] = {}
+                    if habitacion not in dispositivosUsuarios[usuario]:
+                        dispositivosUsuarios[usuario][habitacion] = []
+                    dispositivosUsuarios[usuario][habitacion].append({
+                        'nombre': nombre,
+                        'estado': estado,
+                        'horario': {'encendido': hora_encendido, 'apagado': hora_apagado}
+                    })
+                elif tipo == "CER":
+                    if clave not in cerradurasUsuarios:
+                        cerradurasUsuarios[clave] = []
+                    nombre, estado, pin = valor.split(',', 2)
+                    cerradurasUsuarios[clave].append({'nombre': nombre, 'estado': estado, 'pin': pin})
+    except FileNotFoundError:
+        pass  #Si no existe el archivo, inicializamos con diccionarios vacíos
+    
+    return usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios
 
 
-# Funciones
+def guardar_datos(usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios):
+    #Guarda los datos de los usuarios, sus habitaciones, dispositivos y cerraduras en un archivo de texto
+    #Cada tipo de dato se marca con palabras clave (USR, HAB, DIS, CER) para identificarlo al cargar los datos
+    
+    #items() se usa cuando tienes un diccionario y quieres hacer algo con cada par de clave y valor al mismo tiempo
+    with open("datos.txt", "w") as file:
+        for clave, usuario in usuariosRegistrados.items():
+            valor = f"{usuario['correo']},{usuario['pin']}"
+            file.write(f"USR:{clave}:{valor}\n")
+        for clave, habitaciones in habitacionesUsuarios.items():
+            for habitacion in habitaciones:
+                file.write(f"HAB:{clave}:{habitacion}\n")
+        for usuario, habitaciones in dispositivosUsuarios.items():
+            for habitacion, dispositivos in habitaciones.items():
+                for dispositivo in dispositivos:
+                    valor = f"{dispositivo['nombre']},{dispositivo['estado']},{dispositivo['horario']['encendido']},{dispositivo['horario']['apagado']}"
+                    file.write(f"DIS:{usuario},{habitacion}:{valor}\n")
+        for usuario, cerraduras in cerradurasUsuarios.items():
+            for cerradura in cerraduras:
+                valor = f"{cerradura['nombre']},{cerradura['estado']},{cerradura['pin']}"
+                file.write(f"CER:{usuario}:{valor}\n")
+
+
+# Funciones a utilizar durante el programa
 
 def usuarioExistente(usuariosRegistrados):
+    #Inicio de sesión con usuario existente
+    
     usuarioNombre = input("\nIntroduzca su nombre de usuario: ")
-    if usuarioNombre in usuariosRegistrados.keys():       
+
+    #Verifica que el usuario este dentro del arreglo usuariosRegistrados
+    if usuarioNombre in usuariosRegistrados:       
         pin = input("Introduzca su pin: ")
+        #Verifica que las credenciales coincidan
         if usuariosRegistrados[usuarioNombre]['pin'] == int(pin):
             print("\n ¡Hola " + usuarioNombre + "!\n")
             print("Tu correo electrónico registrado es: ")
@@ -22,63 +87,98 @@ def usuarioExistente(usuariosRegistrados):
     else:
         print("\nMENSAJE: El usuario no existe. Intente de nuevo o ingrese nuevo usuario\n")
 
-def nuevoUsuario(usuariosRegistrados, habitacionesUsuarios):
+def nuevoUsuario(usuariosRegistrados, habitacionesUsuarios, cerradurasUsuarios):
+    #Creación de un nuevo usuario
+    
     nuevoUsuario = input("\nIngrese el nombre de usuario: ")
+    # Comprobamos si el usuario ya existe
+    if nuevoUsuario in usuariosRegistrados:
+        print("\nError: El nombre de usuario ya está registrado. Por favor, elija otro nombre.")
+        return usuariosRegistrados, habitacionesUsuarios, cerradurasUsuarios  #Devuelve los diccionarios sin cambios
+    #Continua si no esta registrado
     correo = input("Ingrese el correo electrónico: ")
     pin = input("Ingrese el pin: ")
     usuariosRegistrados[nuevoUsuario] = {'correo': correo, 'pin': int(pin)}
     habitacionesUsuarios[nuevoUsuario] = []
     cerradurasUsuarios[nuevoUsuario] = []
     print("\nRegistro exitoso. Ahora puede iniciar sesión.")
+    return usuariosRegistrados, habitacionesUsuarios, cerradurasUsuarios   #Devuelve los diccionarios cambiados
+
+
+def cambiarPinUsuario(usuariosRegistrados, usuarioActual):
+    #Opción para cambiar el pin/la contraseña del usuario
+    
+    pin_actual = input("Ingrese su pin actual: ")
+    #Valida que sea el pin actual
+    if usuariosRegistrados[usuarioActual]['pin'] == int(pin_actual):
+        nuevo_pin = input("Ingrese su nuevo pin: ")
+        confirmar_pin = input("Confirme su nuevo pin: ")
+        #Confirma que el nuevo pin este validado
+        if nuevo_pin == confirmar_pin:
+            usuariosRegistrados[usuarioActual]['pin'] = int(nuevo_pin)
+            print("Pin cambiado con éxito.")
+        else:
+            print("Los pines no coinciden. Intente de nuevo.")  #Error si el nuevo pin y la confirmación no son iguales
+    else:
+        print("Pin actual incorrecto. Intente de nuevo.")  #Error si pin actual es incorrecto
+    return usuariosRegistrados
+
 
 def agregarHabitacion(habitacionesUsuarios, cerradurasUsuarios, usuarioActual):
-
-    nombreHabitacion = input("\nIngrese el nombre de la habitación que desea agregar: ")
+    #Agrega habitaciones de la casa de un usuario
     
+    nombreHabitacion = input("\nIngrese el nombre de la habitación que desea agregar: ")
+    #Valida que la habitación no exista anteriormente, ya que no pueden existir dos habitaciones iguales
     if nombreHabitacion not in habitacionesUsuarios[usuarioActual]:
         habitacionesUsuarios[usuarioActual].append(nombreHabitacion)
         pin = input("Asigne un pin de 4 dígitos para la cerradura: ")
+        #Ciclo que define que el pin tiene que ser de 4 dígitos
         while not (pin.isdigit() and len(pin) == 4):
             print("El pin debe ser un número de 4 dígitos.")
             pin = input("Asigne un pin de 4 dígitos para la cerradura: ")
-        cerradura = crear_cerradura(nombreHabitacion + "_cerradura", "cerrado", pin)
+        #Creación de cerradura
+        cerradura = {'nombre': nombreHabitacion + "_cerradura", 'estado': "cerrado", 'pin': pin}
         cerradurasUsuarios[usuarioActual].append(cerradura)
         print("Habitación agregada correctamente junto con su cerradura.")
     else:
-        print("La habitación ya existe.")
-
+        print("La habitación ya existe.")  #Si la habitación existe con anterioridad
+    return habitacionesUsuarios, cerradurasUsuarios
 
 def mostrarHabitaciones(habitacionesUsuarios, usuarioActual):
+    #Muestra habitaciones registradas dentro de la casa de un usuario
     print("\nHabitaciones de", usuarioActual)
     if habitacionesUsuarios[usuarioActual]:
         for habitacion in habitacionesUsuarios[usuarioActual]:
             print("-", habitacion)
     else:
-        print("No se han agregado habitaciones.")
+        print("No se han agregado habitaciones.")  #Error si aún no se han registrado habitaciones
+        
 
 def agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual):
+    #Agrega dispositivos dentro de una habitación específica de la casa del usuario
+
     if not habitacionesUsuarios.get(usuarioActual):
-        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")
-        return
+        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")  #Error si aún no se ha registrado ninguna habitación
+        return dispositivosUsuarios
     
     nombreHabitacion = input("\nIngrese el nombre de la habitación donde agregará el dispositivo: ")
-    
+    #Valida que la habitacion si exista dentro de la casa
     if nombreHabitacion in habitacionesUsuarios[usuarioActual]:
         nombreDispositivo = input("Ingrese el nombre del dispositivo: ")
         if usuarioActual not in dispositivosUsuarios:
             dispositivosUsuarios[usuarioActual] = {}
-
         if nombreHabitacion not in dispositivosUsuarios[usuarioActual]:
             dispositivosUsuarios[usuarioActual][nombreHabitacion] = []
-
         dispositivoExistente = False
+        #Valida que el dispositivo no exista anteriormente
         for dispositivo in dispositivosUsuarios[usuarioActual][nombreHabitacion]:
             if dispositivo['nombre'] == nombreDispositivo:
-                print("Un dispositivo con ese nombre ya existe en la habitación. Por favor, ingrese otro nombre.")
+                print("Un dispositivo con ese nombre ya existe en la habitación. Por favor, ingrese otro nombre.")  #Error si hay un dispositivo registrado con el mismo nombre
                 dispositivoExistente = True
                 break
-        
+        #Dispositivo no existe anteriormente, se continua con el proceso de registro
         if not dispositivoExistente:
+            #Se establece el estado del dispositivo
             resEstado = input("¿El dispositivo está encendido? (si/no): ").lower()
             while resEstado != "si" and resEstado != "no":
                 print("Respuesta inválida. Vuelva a intentarlo.")
@@ -88,11 +188,12 @@ def agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual
             elif resEstado == "no":
                 estado = "apagado"
             dispositivo = {'nombre': nombreDispositivo, 'estado': estado}
-
-            configurar_horario = input("¿Desea configurar un horario de encendido y apagado manualmente? (si/no): ").lower()
+            #Se establece el horario de apagado y encendido
+            configurar_horario = input("¿Desea configurar un horario de encendido y apagado manualmente (si escoge 'no', se va a crear un horario automático)? (si/no): ").lower()
             while configurar_horario != "si" and configurar_horario != "no":
                 print("Respuesta inválida. Vuelva a intentarlo.")
                 configurar_horario = input("¿Desea configurar un horario de encendido y apagado manualmente? (si/no): ").lower()
+            #Horario manual
             if configurar_horario == "si":
                 hora_encendido = input("Ingrese la hora de encendido (formato 24h, ej: 00:00): ")
                 hora_apagado = input("Ingrese la hora de apagado (formato 24h, ej: 22:00): ")
@@ -102,101 +203,144 @@ def agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual
                     hora_apagado = input("Ingrese la hora de apagado (formato 24h, ej: 22:00): ")
                 dispositivo['horario'] = {'encendido': hora_encendido, 'apagado': hora_apagado}
             else:
-                # Establece el horario predeterminado de 12:00 am a 10:00 pm
+                #Horario predeterminado de 12:00 am a 10:00 pm
                 dispositivo['horario'] = {'encendido': '00:00', 'apagado': '22:00'}
 
             dispositivosUsuarios[usuarioActual][nombreHabitacion].append(dispositivo)
+            #Horario creado exitosamente
             if configurar_horario == "si":
                 print(f"Dispositivo agregado correctamente con el horario personalizado de encendido a las {hora_encendido} y apagado a las {hora_apagado}.")
             else:
                 print("Dispositivo agregado correctamente con el horario predeterminado de encendido a las 12:00 am y apagado a las 10:00 pm.")
     else:
-        print("La habitación especificada no existe.")
-
+        print("La habitación especificada no existe.")  #No existe la habitación especificada
+    return dispositivosUsuarios
 
 
 
 
 def mostrarDispositivosHabitacion(dispositivosUsuarios, habitacionesUsuarios, usuarioActual):
+    #Muestra dispositivos registrados dentro de una habitación específica de la casa
+    
     if not habitacionesUsuarios.get(usuarioActual):
-        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")
+        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")  #Error si aún no se ha registrado ninguna habitación
         return
 
     nombreHabitacion = input("\nIngrese el nombre de la habitación de los dispositivos que desea ver: ")
-
+    #Valida que la habitación si exista
     if nombreHabitacion in habitacionesUsuarios[usuarioActual]:
         dispositivos = dispositivosUsuarios.get(usuarioActual, {}).get(nombreHabitacion, [])
+        #Muestra dispositivos
         if dispositivos:
             print("\nDispositivos en", nombreHabitacion, ":")
             for dispositivo in dispositivos:
                 estado = "Encendido" if dispositivo['estado'] == "encendido" else "Apagado"
                 print(f"- {dispositivo['nombre']}: {estado}, encendido a las {dispositivo['horario']['encendido']} y apagado a las {dispositivo['horario']['apagado']}")
         else:
-            print("No hay dispositivos en la habitación", nombreHabitacion)
+            print("No hay dispositivos en la habitación", nombreHabitacion)  #Error si no hay dispositivos registrados
     else:
-        print("La habitación especificada no existe.")
+        print("La habitación especificada no existe.")  #No existe la habitación especificada
 
 def modificarEstadoDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual):
+    #Modifica estado de encendido o apagado de un dispositivo
+    
     if not habitacionesUsuarios.get(usuarioActual):
-        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")
-        return
+        print("\nAún no ha registrado ninguna habitación. Por favor, agregue una habitación primero.")  #Error si aún no se ha registrado ninguna habitación
+        return dispositivosUsuarios
 
     nombreHabitacion = input("\nIngrese el nombre de la habitación donde modificará el dispositivo: ")
-
+    #Valida que la habitación si exista
     if nombreHabitacion in habitacionesUsuarios[usuarioActual]:
         dispositivos = dispositivosUsuarios.get(usuarioActual, {}).get(nombreHabitacion, [])
         if dispositivos:
             nombreDispositivo = input("\nIngrese el nombre del dispositivo que desea modificar: ")
+            #Valida que el dispositivo si exista dentro de la habitación
             for dispositivo in dispositivos:
                 if dispositivo['nombre'] == nombreDispositivo:
                     nuevo_estado = input("Ingrese el nuevo estado del dispositivo (encendido/apagado): ").lower()
+                    #Valida si el nuevo estado esta dentro de las opciones
                     if nuevo_estado in ["encendido", "apagado"]:
-                        dispositivo['estado'] = nuevo_estado
-                        print("Estado del dispositivo modificado correctamente.")
-                        return
+                        #Si el nuevo estado es el mismo al actual, no se modifica
+                        if nuevo_estado == "encendido" and dispositivo['estado'] == nuevo_estado:
+                            print("Dispositivo ya esta encendido.")
+                            return dispositivosUsuarios
+                        elif nuevo_estado == "apagado" and dispositivo['estado'] == nuevo_estado:
+                            print("Dispositivo ya esta apagado.")
+                            return dispositivosUsuarios
+                        #Sino, se cambia por el nuevo
+                        else:
+                            dispositivo['estado'] = nuevo_estado
+                            print("Estado del dispositivo modificado correctamente.")
+                            return dispositivosUsuarios
                     else:
-                        print("Estado no válido. Por favor, ingrese 'encendido' o 'apagado'.")
-                        return
-            print("No se encontró un dispositivo con ese nombre.")
+                        print("Estado no válido. Por favor, ingrese 'encendido' o 'apagado'.")  #Error si el nuevo estado no esta dentro de las opciones
+                        return dispositivosUsuarios
+            print("No se encontró un dispositivo con ese nombre.")  #No existe el dispositivo especificado
         else:
-            print("No hay dispositivos en la habitación", nombreHabitacion)
+            print("No hay dispositivos en la habitación", nombreHabitacion)  #Error si no hay dispositivos registrados
     else:
-        print("La habitación especificada no existe.")
+        print("La habitación especificada no existe.")  #No existe la habitación especificada
+    return dispositivosUsuarios
 
 
 # Funciones de cerraduras
 
 def crear_cerradura(nombre, estado, pin):
+    #Creación de una cerradura de una habitación
+    
     return {"nombre": nombre, "estado": estado, "pin": pin}
 
 def cambiar_pin(cerradura):
+    #Cambiar pin de una cerradura
+    
     pin_actual = input("Ingrese el pin actual: ")
+    #Validación del pin actual
     if pin_actual == cerradura["pin"]:
         nuevo_pin = input("Ingrese el nuevo pin: ")
+        #Validación de que el pin tenga menos de 4 dígitos
         if len(nuevo_pin) > 4:
             print("¡Error! El pin no puede tener más de 4 dígitos.")
             return
+        #Pin cambiado
         cerradura["pin"] = nuevo_pin
         print("¡El pin ha sido cambiado con éxito!")
     else:
-        print("¡Pin incorrecto! No se puede cambiar el pin.")
+        print("¡Pin incorrecto! No se puede cambiar el pin.")  #Pin incorrecto
         
 
-def abrir_cerradura(cerradura, pin):
-    if pin == cerradura["pin"]:
-        cerradura["estado"] = "abierto"
-        print(f"La cerradura {cerradura['nombre']} ha sido abierta.")
-    else:
-        print("¡Pin incorrecto! No se puede abrir la cerradura.")
+def abrir_cerradura(cerradura):
+    #Abrir cerradura
 
-def cerrar_cerradura(cerradura, pin):
-    if pin == cerradura["pin"]:
-        cerradura["estado"] = "cerrado"
-        print(f"La cerradura {cerradura['nombre']} ha sido cerrada.")
+    #Si la cerradura ya esta abierta, se avisa al usuario
+    if cerradura["estado"] == "abierto":
+        print("La cerradura ya esta abierta.")
+    #Sino, se valida el pin y se cambia
     else:
-        print("¡Pin incorrecto! No se puede cerrar la cerradura.")
+        pin = input("Ingrese el pin: ")
+        if pin == cerradura["pin"]:
+            cerradura["estado"] = "abierto"
+            print(f"La cerradura {cerradura['nombre']} ha sido abierta.")
+        else:
+            print("¡Pin incorrecto! No se puede abrir la cerradura.")
+
+def cerrar_cerradura(cerradura):
+    #Cerrar cerradura
+
+    #Si la cerradura ya esta cerrada, se avisa al usuario
+    if cerradura["estado"] == "cerrado":
+        print("La cerradura ya esta cerrada.")
+    #Sino, se valida el pin y se cambia
+    else:
+        pin = input("Ingrese el pin: ")
+        if pin == cerradura["pin"]:
+            cerradura["estado"] = "cerrado"
+            print(f"La cerradura {cerradura['nombre']} ha sido cerrada.")
+        else:
+            print("¡Pin incorrecto! No se puede cerrar la cerradura.")
 
 def opcionesCerradura(cerradura):
+    #Opciones para manejar y modificar la cerradura
+    
     while True:
         print(f"\nOperando la cerradura {cerradura['nombre']}:")
         print("1. Abrir cerradura")
@@ -207,11 +351,9 @@ def opcionesCerradura(cerradura):
         accion = input("Seleccione una acción: ")
 
         if accion == '1':
-            pin = input("Ingrese el pin: ")
-            abrir_cerradura(cerradura, pin)
+            abrir_cerradura(cerradura)
         elif accion == '2':
-            pin = input("Ingrese el pin: ")
-            cerrar_cerradura(cerradura, pin)
+            cerrar_cerradura(cerradura)
         elif accion == '3':
             cambiar_pin(cerradura)
         elif accion == '4':
@@ -219,56 +361,46 @@ def opcionesCerradura(cerradura):
         else:
             print("¡Opción inválida! Inténtelo de nuevo.")
 
-def menu_cerraduras(cerraduras, usuarioActual):
+def menu_cerraduras(cerradurasUsuarios, usuarioActual):
+    #Menú de cerraduras existentes
+    
     while True:
         print("\n--- Menú de Cerraduras ---")
-        for i, cerradura in enumerate(cerraduras[usuarioActual], start=1):
+        cerraduras = cerradurasUsuarios.get(usuarioActual, [])
+        for i, cerradura in enumerate(cerraduras, start=1):
             print(f"{i}. {cerradura['nombre']}: {cerradura['estado']}")
 
         print("0. Salir")
 
-        opcion = input("Seleccione una cerradura para cambiar su estado: ")
+        opcion = input("Seleccione una cerradura para operar: ")
 
         if opcion == '0':
             print("\nVolviendo al menú del usuario...")
             break
         elif opcion.isdigit() and 0 < int(opcion) <= len(cerraduras):
-            cerradura_seleccionada = cerraduras[usuarioActual][int(opcion) - 1]
+            cerradura_seleccionada = cerraduras[int(opcion) - 1]
             opcionesCerradura(cerradura_seleccionada)
         else:
             print("¡Opción inválida! Inténtelo de nuevo.")
-
-def cambiarPinUsuario(usuariosRegistrados, usuarioActual):
-    pin_actual = input("Ingrese su pin actual: ")
-    if usuariosRegistrados[usuarioActual]['pin'] == int(pin_actual):
-        nuevo_pin = input("Ingrese su nuevo pin: ")
-        confirmar_pin = input("Confirme su nuevo pin: ")
-        if nuevo_pin == confirmar_pin:
-            usuariosRegistrados[usuarioActual]['pin'] = int(nuevo_pin)
-            print("Pin cambiado con éxito.")
-        else:
-            print("Los pines no coinciden. Intente de nuevo.")
-    else:
-        print("Pin actual incorrecto. Intente de nuevo.")
     
 
-def mostrarTodasCerraduras(habitacionesUsuarios, cerradurasUsuarios):
-    hay_cerraduras = False
-    for usuario, cerraduras in cerradurasUsuarios.items():
-        if cerraduras:
-            print(f"\nCerraduras de {usuario}:")
-            for cerradura in cerraduras:
-                print(f"- {cerradura['nombre']}: {cerradura['estado']}")
-            hay_cerraduras = True
-
-    if not hay_cerraduras:
-        print("\nNo hay cerraduras creadas.")
-
+def mostrarTodasCerraduras(cerradurasUsuarios, usuarioActual):
+    #Muestra todas las cerraduras existentes
+    
+    cerraduras = cerradurasUsuarios.get(usuarioActual, [])
+    if cerraduras:
+        print(f"\nCerraduras de {usuarioActual}:")
+        for cerradura in cerraduras:
+            print(f"- {cerradura['nombre']}: {cerradura['estado']}")
+    else:
+        print("\nNo hay cerraduras creadas para este usuario.")    #No hay cerraduras registradas
             
 
 # Principal
 
-def menu_usuario(usuarioActual):
+def menu_usuario(usuarioActual, usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios):
+    #Muestra las opciones una vez que el usuario inicia sesión
+    
     opcionUsuario = "1"
     while opcionUsuario != "9":
         print("\nMENU DEL USUARIO")
@@ -284,27 +416,35 @@ def menu_usuario(usuarioActual):
         opcionUsuario = input("Por favor seleccione una opción: ")
 
         if opcionUsuario == "1":
-            agregarHabitacion(habitacionesUsuarios, cerradurasUsuarios, usuarioActual)
+            habitacionesUsuarios, cerradurasUsuarios = agregarHabitacion(habitacionesUsuarios, cerradurasUsuarios, usuarioActual)
         elif opcionUsuario == "2":
             mostrarHabitaciones(habitacionesUsuarios, usuarioActual)
         elif opcionUsuario == "3":
-            agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual)
+            dispositivosUsuarios = agregarDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual)
         elif opcionUsuario == "4":
             mostrarDispositivosHabitacion(dispositivosUsuarios, habitacionesUsuarios, usuarioActual)
         elif opcionUsuario == "5":
-            modificarEstadoDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual)
+            dispositivosUsuarios = modificarEstadoDispositivo(dispositivosUsuarios, habitacionesUsuarios, usuarioActual)
         elif opcionUsuario == "6":
             menu_cerraduras(cerradurasUsuarios, usuarioActual)
         elif opcionUsuario == "7":
-            mostrarTodasCerraduras(habitacionesUsuarios, cerradurasUsuarios)
+            mostrarTodasCerraduras(cerradurasUsuarios, usuarioActual)
         elif opcionUsuario == "8":
-            cambiarPinUsuario(usuariosRegistrados, usuarioActual)
+            usuariosRegistrados = cambiarPinUsuario(usuariosRegistrados, usuarioActual)
         elif opcionUsuario == "9":
             print("\nVolviendo a menú principal...")
         else:
             print("\nSu selección no es compatible. Intente de nuevo")
 
+
+# Función principal
+
 def main():
+    #Menú principal
+
+    #Se cargan los datos del txt
+    usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios = leer_datos()
+
     opcion = "1"
     while opcion != "3": 
         print("\n Bienvenido a SmartHome.\n")
@@ -317,10 +457,10 @@ def main():
         if opcion == "1":
             usuarioActual = usuarioExistente(usuariosRegistrados)
             if usuarioActual:
-                menu_usuario(usuarioActual)
+                menu_usuario(usuarioActual, usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios)
         
         elif opcion == "2":
-            nuevoUsuario(usuariosRegistrados, habitacionesUsuarios)
+            usuariosRegistrados, habitacionesUsuarios, cerradurasUsuarios = nuevoUsuario(usuariosRegistrados, habitacionesUsuarios, cerradurasUsuarios)
         
         elif opcion == "3":
             print("\nSesión finalizada. ¡Hasta luego!")
@@ -329,7 +469,11 @@ def main():
         else:
             print("\nSu selección no es compatible. Intente de nuevo")
 
+    #Se guardan los datos nuevos dentro del txt
+    guardar_datos(usuariosRegistrados, habitacionesUsuarios, dispositivosUsuarios, cerradurasUsuarios)
 
-#Ejecucion
-            
-main()
+
+#Ejecución del programa
+    
+if __name__ == "__main__":
+    main()
